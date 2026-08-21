@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-catalog",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/services/catalog/Catalog.Api/Catalog.Api.csproj"],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-basket",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/services/basket/Basket.Api/Basket.Api.csproj"],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-orders",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/services/orders/Orders.Api/Orders.Api.csproj"],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-gateway",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/gateway/ApiGateway/ApiGateway.csproj"],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}

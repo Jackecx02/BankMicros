@@ -1,0 +1,56 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Catalog.Api",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-catalog",
+            "program": "${workspaceFolder}/services/catalog/Catalog.Api/bin/Debug/net10.0/Catalog.Api.dll",
+            "cwd": "${workspaceFolder}/services/catalog/Catalog.Api",
+            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Basket.Api",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-basket",
+            "program": "${workspaceFolder}/services/basket/Basket.Api/bin/Debug/net10.0/Basket.Api.dll",
+            "cwd": "${workspaceFolder}/services/basket/Basket.Api",
+            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Orders.Api",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-orders",
+            "program": "${workspaceFolder}/services/orders/Orders.Api/bin/Debug/net10.0/Orders.Api.dll",
+            "cwd": "${workspaceFolder}/services/orders/Orders.Api",
+            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "ApiGateway",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-gateway",
+            "program": "${workspaceFolder}/gateway/ApiGateway/bin/Debug/net10.0/ApiGateway.dll",
+            "cwd": "${workspaceFolder}/gateway/ApiGateway",
+            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Todos los servicios (local)",
+            "configurations": ["Catalog.Api", "Basket.Api", "Orders.Api", "ApiGateway"],
+            "stopAll": true
+        }
+    ]
+}

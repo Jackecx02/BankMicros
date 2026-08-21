@@ -1,0 +1,144 @@
+services:
+  catalog-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog_pw
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  orders-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders_pw
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders -d orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9094:9094"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8090:8080"
+    depends_on:
+      - kafka
+
+  catalog-api:
+    build:
+      context: .
+      dockerfile: services/catalog/Catalog.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__CatalogDb: Host=catalog-db;Port=5432;Database=catalog;Username=catalog;Password=catalog_pw
+      Kafka__BootstrapServers: kafka:9092
+    ports:
+      - "5093:8080"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  basket-api:
+    build:
+      context: .
+      dockerfile: services/basket/Basket.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Redis: redis:6379
+      Services__Catalog: http://catalog-api:8080
+      Kafka__BootstrapServers: kafka:9092
+    ports:
+      - "5005:8080"
+    depends_on:
+      - redis
+      - catalog-api
+      - kafka
+
+  orders-api:
+    build:
+      context: .
+      dockerfile: services/orders/Orders.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__OrdersDb: Host=orders-db;Port=5432;Database=orders;Username=orders;Password=orders_pw
+      Services__Basket: http://basket-api:8080
+      Kafka__BootstrapServers: kafka:9092
+    ports:
+      - "5139:8080"
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      basket-api:
+        condition: service_started
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: gateway/ApiGateway/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: http://catalog-api:8080
+      ReverseProxy__Clusters__basket-cluster__Destinations__destination1__Address: http://basket-api:8080
+      ReverseProxy__Clusters__orders-cluster__Destinations__destination1__Address: http://orders-api:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - catalog-api
+      - basket-api
+      - orders-api
+
+volumes:
+  catalog-db-data:
+  orders-db-data:

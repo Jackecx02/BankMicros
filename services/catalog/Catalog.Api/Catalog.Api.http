@@ -1,0 +1,39 @@
+@Catalog.Api_HostAddress = http://localhost:5093
+
+GET {{Catalog.Api_HostAddress}}/products
+Accept: application/json
+
+###
+
+POST {{Catalog.Api_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Webcam 1080p",
+  "description": "USB-C, autoenfoque",
+  "price": 45.5,
+  "stockQuantity": 8
+}
+
+###
+
+GET {{Catalog.Api_HostAddress}}/products/{{productId}}
+Accept: application/json
+
+###
+
+PUT {{Catalog.Api_HostAddress}}/products/{{productId}}
+Content-Type: application/json
+
+{
+  "name": "Webcam 1080p Pro",
+  "description": "USB-C, autoenfoque, mic dual",
+  "price": 52.0,
+  "stockQuantity": 6
+}
+
+###
+
+DELETE {{Catalog.Api_HostAddress}}/products/{{productId}}
+
+###
